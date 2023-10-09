@@ -5,7 +5,6 @@ import argparse
 import yaml
 import zipfile
 
-
 def generate_example_yaml(config_file):
     example_config = {
         "project_name": "bugg-main-r5",
@@ -15,12 +14,12 @@ def generate_example_yaml(config_file):
         "layers": "F.Cu,B.Cu,In1.Cu,In2.Cu,In3.Cu,In4.Cu,F.Silkscreen,B.Silkscreen,F.Mask,B.Mask,F.Paste,B.Paste,Edge.Cuts,User.1",
         "bom_fields": "Reference,Value,Voltage,Tempco,Tolerance,Footprint,Manufacturer,MPN,Mouser,Digikey,${QUANTITY}",
         "bom_labels": "Reference,Value,Voltage,Tempco,Tolerance,Footprint,Manufacturer,MPN,Mouser,Digikey,Qty",
+        "bom_groupby": "Value"  # Added bom_groupby with a default value
     }
 
     with open(config_file, 'w') as file:
         yaml.dump(example_config, file,
                   default_flow_style=False, sort_keys=False)
-
 
 def main():
     parser = argparse.ArgumentParser(description="KiCad Automation Script")
@@ -52,7 +51,7 @@ def main():
     layers = [layer.strip() for layer in config["layers"].split(',')]
     bom_fields = [field.strip() for field in config["bom_fields"].split(',')]
     bom_labels = [label.strip() for label in config["bom_labels"].split(',')]
-    bom_groupby = "Value"
+    bom_groupby = config.get("bom_groupby", "Value")  # Get bom_groupby or default to "Value"
 
     # List to store return codes
     return_codes = []
@@ -140,6 +139,6 @@ def main():
     else:
         print("Some jobs encountered errors.")
 
-
 if __name__ == "__main__":
     main()
+
