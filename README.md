@@ -1,4 +1,4 @@
-# lacKi - Automated generation of Kicad production data
+# lacKi - Automated generation of KiCAD production data
 
 lacKi uses kicad-cli to generate Gerbers, placement data, and BoM data.
 
@@ -10,7 +10,8 @@ It is configured with a simple YAML file.
 
 ## Configuration 
 
-myboard.yaml
+`myboard.yaml`
+
 ```
 project_name: bugg-main-r5
 zip_file: bugg-main-r5.zip
@@ -26,7 +27,9 @@ Running lacKi.py `--generate-example` will write out an example config file that
 It's pretty self-explanatory:
 
 `project_name`: Name of your KiCAD project, e.g. myproject, which is appended with .kicad_sch, .kicad_pcb, etc. to locate your files
+
 `project_dir` : Location of those files `myproject.kicad_pcb` and friends.
+
 `output_dir` : This folder will be created, and under it a folder for each of the gerbers, bom and assembly files.
 `layers` : List of PCB layers to plot as gerbers. Drills are always plotted in Excellon format.
 `bom_fields` : List of fields that will be included in the BoM.
