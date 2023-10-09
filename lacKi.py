@@ -14,7 +14,7 @@ def generate_example_yaml(config_file):
         "layers": "F.Cu,B.Cu,In1.Cu,In2.Cu,In3.Cu,In4.Cu,F.Silkscreen,B.Silkscreen,F.Mask,B.Mask,F.Paste,B.Paste,Edge.Cuts,User.1",
         "bom_fields": "Reference,Value,Voltage,Tempco,Tolerance,Footprint,Manufacturer,MPN,Mouser,Digikey,${QUANTITY}",
         "bom_labels": "Reference,Value,Voltage,Tempco,Tolerance,Footprint,Manufacturer,MPN,Mouser,Digikey,Qty",
-        "bom_groupby": "Value"  # Added bom_groupby with a default value
+        "bom_groupby": "Value",  # Added bom_groupby setting with default value
     }
 
     with open(config_file, 'w') as file:
@@ -51,7 +51,7 @@ def main():
     layers = [layer.strip() for layer in config["layers"].split(',')]
     bom_fields = [field.strip() for field in config["bom_fields"].split(',')]
     bom_labels = [label.strip() for label in config["bom_labels"].split(',')]
-    bom_groupby = config.get("bom_groupby", "Value")  # Get bom_groupby or default to "Value"
+    bom_groupby = ",".join([group.strip() for group in config.get("bom_groupby", "Value").split(',')])  # Handle bom_groupby with default value "Value"
 
     # List to store return codes
     return_codes = []
@@ -114,7 +114,7 @@ def main():
 
     print("Printing BoM...")
     process = subprocess.run(["kicad-cli-nightly", "sch", "export", "bom", "--output", f"{bom_dir}/{project_name}.csv", "--fields", ",".join(
-        bom_fields), "--labels", ",".join(bom_labels), "--group-by", bom_groupby, "--ref-range-delimiter", '""', schematic_file])
+        bom_fields), "--labels", ",".join(bom_labels), "--group-by", bom_groupby, "--ref-range-delimiter", "", schematic_file])  # Changed ref-range-delimiter to ""
     return_codes.append(process.returncode)
     if process.returncode == 0:
         print("Success.")
