@@ -3,25 +3,32 @@ import os
 import subprocess
 import argparse
 import yaml
+import zipfile
+
 
 def generate_example_yaml(config_file):
     example_config = {
         "project_name": "bugg-main-r5",
+        "zip_file": "project-archive.zip",
         "project_dir": "./src",
         "output_dir": "./build",
         "layers": "F.Cu,B.Cu,In1.Cu,In2.Cu,In3.Cu,In4.Cu,F.Silkscreen,B.Silkscreen,F.Mask,B.Mask,F.Paste,B.Paste,Edge.Cuts,User.1",
         "bom_fields": "Reference,Value,Voltage,Tempco,Tolerance,Footprint,Manufacturer,MPN,Mouser,Digikey,${QUANTITY}",
-        "bom_labels": "Reference,Value,Voltage,Tempco,Tolerance,Footprint,Manufacturer,MPN,Mouser,Digikey,Qty"
+        "bom_labels": "Reference,Value,Voltage,Tempco,Tolerance,Footprint,Manufacturer,MPN,Mouser,Digikey,Qty",
     }
 
     with open(config_file, 'w') as file:
-        yaml.dump(example_config, file, default_flow_style=False, sort_keys=False)
+        yaml.dump(example_config, file,
+                  default_flow_style=False, sort_keys=False)
+
 
 def main():
     parser = argparse.ArgumentParser(description="KiCad Automation Script")
 
-    parser.add_argument("--config-file", help="Path to the YAML configuration file")
-    parser.add_argument("--generate-example", action="store_true", help="Generate an example YAML configuration file")
+    parser.add_argument(
+        "--config-file", help="Path to the YAML configuration file")
+    parser.add_argument("--generate-example", action="store_true",
+                        help="Generate an example YAML configuration file")
 
     args = parser.parse_args()
     config_file = args.config_file
@@ -52,7 +59,8 @@ def main():
 
     print("Removing existing data")
     if os.path.exists(output_dir):
-        return_codes.append(subprocess.run(["rm", "-rf", output_dir]).returncode)
+        return_codes.append(subprocess.run(
+            ["rm", "-rf", output_dir]).returncode)
 
     print("Creating file tree")
     os.makedirs(output_dir, exist_ok=True)
@@ -117,9 +125,21 @@ def main():
     # Check if all jobs completed successfully (return code 0)
     if all(rc == 0 for rc in return_codes):
         print("\nAll jobs completed successfully.")
+
+        # Create a zip archive if zip_file is specified in the config
+        zip_file = config.get("zip_file")
+        if zip_file:
+            with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for root, _, files in os.walk(output_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        arcname = os.path.relpath(file_path, output_dir)
+                        zipf.write(file_path, arcname=os.path.join(
+                            output_dir, arcname))
+            print(f"Created project archive {zip_file}.")
     else:
-        print("Some jobs encountered errors. Check the logs for details.")
+        print("Some jobs encountered errors.")
+
 
 if __name__ == "__main__":
     main()
-
