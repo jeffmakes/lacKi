@@ -4,6 +4,7 @@ import subprocess
 import argparse
 import yaml
 import zipfile
+import shutil
 
 def generate_example_yaml(config_file):
     example_config = {
@@ -14,12 +15,20 @@ def generate_example_yaml(config_file):
         "layers": "F.Cu,B.Cu,In1.Cu,In2.Cu,In3.Cu,In4.Cu,F.Silkscreen,B.Silkscreen,F.Mask,B.Mask,F.Paste,B.Paste,Edge.Cuts,User.1",
         "bom_fields": "Reference,Value,Voltage,Tempco,Tolerance,Footprint,Manufacturer,MPN,Mouser,Digikey,${QUANTITY}",
         "bom_labels": "Reference,Value,Voltage,Tempco,Tolerance,Footprint,Manufacturer,MPN,Mouser,Digikey,Qty",
-        "bom_groupby": "Value",  # Added bom_groupby setting with default value
+        "bom_groupby": "Value",
+        "extra_files": "file1.txt,file2.txt",  # Updated option name to extra_files
     }
 
     with open(config_file, 'w') as file:
         yaml.dump(example_config, file,
                   default_flow_style=False, sort_keys=False)
+
+def copy_extra_files(extra_files, output_dir):
+    if extra_files:
+        for file_name in extra_files:
+            file_path = os.path.abspath(file_name)
+            if os.path.exists(file_path):
+                shutil.copy(file_path, os.path.join(output_dir, os.path.basename(file_path)))
 
 def main():
     parser = argparse.ArgumentParser(description="KiCad Automation Script")
@@ -51,7 +60,10 @@ def main():
     layers = [layer.strip() for layer in config["layers"].split(',')]
     bom_fields = [field.strip() for field in config["bom_fields"].split(',')]
     bom_labels = [label.strip() for label in config["bom_labels"].split(',')]
-    bom_groupby = ",".join([group.strip() for group in config.get("bom_groupby", "Value").split(',')])  # Handle bom_groupby with default value "Value"
+    bom_groupby = ",".join([group.strip() for group in config.get("bom_groupby", "Value").split(',')])
+    
+    # Updated option name to extra_files
+    extra_files = [file.strip() for file in config.get("extra_files", "").split(',')]
 
     # List to store return codes
     return_codes = []
@@ -114,12 +126,15 @@ def main():
 
     print("Printing BoM...")
     process = subprocess.run(["kicad-cli-nightly", "sch", "export", "bom", "--output", f"{bom_dir}/{project_name}.csv", "--fields", ",".join(
-        bom_fields), "--labels", ",".join(bom_labels), "--group-by", bom_groupby, "--ref-range-delimiter", "", schematic_file])  # Changed ref-range-delimiter to ""
+        bom_fields), "--labels", ",".join(bom_labels), "--group-by", bom_groupby, "--ref-range-delimiter", "", schematic_file])
     return_codes.append(process.returncode)
     if process.returncode == 0:
         print("Success.")
     else:
         print(f"Failed with return code: {process.returncode}")
+
+    # Copy extra files to the root of the build folder
+    copy_extra_files(extra_files, output_dir)
 
     # Check if all jobs completed successfully (return code 0)
     if all(rc == 0 for rc in return_codes):
